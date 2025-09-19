@@ -1,0 +1,69 @@
+# Sample phishing email
+
+From: security@chas3-bank.com
+To: victim@example.com
+Subject: URGENT: Account Suspended - Immediate Action Required
+Message-ID: <urgent123@chas3-bank.com>
+Date: Thu, 19 Sep 2025 02:30:15 +0000
+Received-SPF: fail (chas3-bank.com: domain of security@chas3-bank.com does not designate 45.33.22.11 as permitted sender)
+Authentication-Results: mx.example.com;
+    dkim=fail header.i=@chas3-bank.com;
+    dmarc=fail
+Content-Type: text/html; charset=utf-8
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>URGENT Account Security Alert</title>
+</head>
+<body style="font-family: Arial, sans-serif;">
+    <div style="background-color: #ff4444; color: white; padding: 10px; text-align: center;">
+        <h1>🚨 SECURITY ALERT 🚨</h1>
+    </div>
+    
+    <div style="padding: 20px;">
+        <p>Dear Customer,</p>
+        
+        <p><strong>Your account has been SUSPENDED due to suspicious activity!</strong></p>
+        
+        <p>We detected multiple failed login attempts from an unrecognized device. To protect your account, we have temporarily suspended access.</p>
+        
+        <p style="background-color: #ffeeee; padding: 15px; border-left: 4px solid #ff4444;">
+            <strong>IMMEDIATE ACTION REQUIRED:</strong><br>
+            You must verify your identity within 24 hours or your account will be permanently closed.
+        </p>
+        
+        <p>Click the button below to verify your account immediately:</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="http://secure-verify-chase.phishing-site.com/verify?token=abc123" 
+               style="background-color: #0066cc; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                VERIFY ACCOUNT NOW
+            </a>
+        </div>
+        
+        <p><strong>What you need to do:</strong></p>
+        <ol>
+            <li>Click the verification link above</li>
+            <li>Enter your online banking credentials</li>
+            <li>Confirm your personal information</li>
+            <li>Update your security settings</li>
+        </ol>
+        
+        <p style="color: red; font-weight: bold;">⚠️ Failure to complete verification within 24 hours will result in permanent account closure.</p>
+        
+        <p>If you have any questions, please don't reply to this email. Instead, call our security department immediately at <a href="tel:1-800-123-FAKE">1-800-123-FAKE</a>.</p>
+        
+        <p>Thank you for your immediate attention to this matter.</p>
+        
+        <p>Chase Security Team<br>
+        Account Protection Division</p>
+    </div>
+    
+    <hr>
+    <small style="color: #666;">
+        This message was sent to protect your account security.<br>
+        Chase Bank - Protecting your financial future since 1799
+    </small>
+</body>
+</html>

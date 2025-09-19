@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank Phishing Guardian</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <img src="icons/icon32.png" alt="Bank Phishing Guardian" class="logo-icon">
+        <h1 class="logo-text">Bank Phishing Guardian</h1>
+      </div>
+      <div class="status-indicator" id="statusIndicator">
+        <span class="status-dot"></span>
+        <span class="status-text">Checking...</span>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+      <!-- Quick Stats -->
+      <div class="stats-section">
+        <h2>Today's Protection</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number" id="emailsAnalyzed">0</div>
+            <div class="stat-label">Emails Analyzed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="threatsBlocked">0</div>
+            <div class="stat-label">Threats Blocked</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Email Analysis -->
+      <div class="current-analysis" id="currentAnalysis" style="display: none;">
+        <h3>Current Email</h3>
+        <div class="analysis-result">
+          <div class="risk-score">
+            <div class="score-circle" id="riskScoreCircle">
+              <span class="score-number" id="riskScoreNumber">0</span>
+            </div>
+            <div class="risk-info">
+              <div class="risk-level" id="riskLevel">Safe</div>
+              <div class="risk-description" id="riskDescription">No threats detected</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls-section">
+        <div class="toggle-control">
+          <label class="toggle-label">
+            <input type="checkbox" id="enabledToggle" checked>
+            <span class="toggle-slider"></span>
+            Enable Protection
+          </label>
+        </div>
+        
+        <div class="sensitivity-control">
+          <label for="sensitivitySelect">Detection Sensitivity:</label>
+          <select id="sensitivitySelect" class="control-select">
+            <option value="low">Low (Fewer warnings)</option>
+            <option value="medium" selected>Medium (Balanced)</option>
+            <option value="high">High (More sensitive)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="actions-section">
+        <button class="btn btn-primary" id="analyzeCurrentBtn">
+          <span class="btn-icon">🔍</span>
+          Analyze Current Email
+        </button>
+        
+        <button class="btn btn-secondary" id="viewDetailsBtn">
+          <span class="btn-icon">📊</span>
+          View Detailed Report
+        </button>
+        
+        <button class="btn btn-secondary" id="settingsBtn">
+          <span class="btn-icon">⚙️</span>
+          Settings
+        </button>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="activity-section">
+        <h3>Recent Activity</h3>
+        <div class="activity-list" id="activityList">
+          <div class="activity-item placeholder">
+            <div class="activity-icon">📧</div>
+            <div class="activity-content">
+              <div class="activity-title">No recent activity</div>
+              <div class="activity-time">Waiting for emails to analyze...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="api-status">
+        <span class="api-indicator" id="apiIndicator">🔴</span>
+        <span class="api-text" id="apiText">Connecting to API...</span>
+      </div>
+      <div class="version">v1.0.0</div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal" id="settingsModal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="modal-close" id="closeSettingsModal">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="setting-group">
+          <label for="apiEndpointInput">API Endpoint:</label>
+          <input type="url" id="apiEndpointInput" class="setting-input" placeholder="http://localhost:8000">
+          <small>URL of your Bank Phishing Detector service</small>
+        </div>
+        
+        <div class="setting-group">
+          <label class="setting-checkbox">
+            <input type="checkbox" id="autoAnalyzeInput">
+            <span class="checkmark"></span>
+            Auto-analyze emails
+          </label>
+        </div>
+        
+        <div class="setting-group">
+          <label class="setting-checkbox">
+            <input type="checkbox" id="showWarningsInput">
+            <span class="checkmark"></span>
+            Show warning overlays
+          </label>
+        </div>
+        
+        <div class="setting-group">
+          <label class="setting-checkbox">
+            <input type="checkbox" id="collectAnalyticsInput">
+            <span class="checkmark"></span>
+            Collect usage analytics
+          </label>
+        </div>
+        
+        <div class="setting-group">
+          <label for="themeSelect">Theme:</label>
+          <select id="themeSelect" class="setting-select">
+            <option value="auto">Auto (System)</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+        
+        <div class="setting-group">
+          <button class="btn btn-danger" id="clearDataBtn">
+            Clear All Data
+          </button>
+          <small>This will clear all settings and analytics data</small>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelSettingsBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveSettingsBtn">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

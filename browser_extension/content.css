@@ -1,0 +1,351 @@
+/* Bank Phishing Guardian - Content Script Styles */
+
+/* Warning Overlay */
+.bpg-warning-overlay {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  width: 400px;
+  max-width: 90vw;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  animation: bpgSlideIn 0.3s ease-out;
+}
+
+@keyframes bpgSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.bpg-warning-content.warning {
+  border-left: 4px solid #ff9800;
+}
+
+.bpg-warning-content.danger {
+  border-left: 4px solid #f44336;
+  background: linear-gradient(135deg, #ffebee 0%, #ffffff 100%);
+}
+
+.bpg-warning-header {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  gap: 12px;
+}
+
+.bpg-warning-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.bpg-warning-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #333;
+  flex-grow: 1;
+}
+
+.bpg-warning-score {
+  background: #f5f5f5;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+}
+
+.bpg-close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.bpg-close-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.bpg-warning-body {
+  padding: 16px;
+}
+
+.bpg-concerns {
+  margin-bottom: 16px;
+}
+
+.bpg-concerns strong {
+  color: #333;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.bpg-concerns ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #555;
+}
+
+.bpg-concerns li {
+  margin-bottom: 4px;
+}
+
+.bpg-indicators {
+  margin-bottom: 16px;
+}
+
+.bpg-indicators strong {
+  color: #333;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.bpg-indicator-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bpg-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.bpg-indicator-type {
+  background: #6c757d;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  min-width: 40px;
+  text-align: center;
+}
+
+.bpg-indicator-reason {
+  color: #555;
+  flex-grow: 1;
+}
+
+.bpg-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bpg-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+  min-width: 80px;
+}
+
+.bpg-btn-danger {
+  background: #f44336;
+  color: white;
+}
+
+.bpg-btn-danger:hover {
+  background: #d32f2f;
+}
+
+.bpg-btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.bpg-btn-secondary:hover {
+  background: #5a6268;
+}
+
+.bpg-btn-info {
+  background: #2196f3;
+  color: white;
+}
+
+.bpg-btn-info:hover {
+  background: #1976d2;
+}
+
+/* Status Indicator Badge */
+.bpg-indicator-badge {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 9999;
+  background: white;
+  padding: 12px 16px;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  animation: bpgSlideIn 0.3s ease-out;
+  border-left: 4px solid #4caf50;
+}
+
+.bpg-indicator-badge[data-status="analyzing"] {
+  border-left-color: #2196f3;
+}
+
+.bpg-indicator-badge[data-status="warning"] {
+  border-left-color: #ff9800;
+}
+
+.bpg-indicator-badge[data-status="danger"] {
+  border-left-color: #f44336;
+}
+
+.bpg-indicator-badge[data-status="error"] {
+  border-left-color: #757575;
+}
+
+.bpg-indicator-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bpg-indicator-icon {
+  font-size: 16px;
+}
+
+.bpg-indicator-text {
+  color: #333;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .bpg-warning-overlay {
+    width: 90vw;
+    top: 10px;
+    right: 5vw;
+  }
+  
+  .bpg-warning-header {
+    padding: 12px;
+    flex-wrap: wrap;
+  }
+  
+  .bpg-warning-body {
+    padding: 12px;
+  }
+  
+  .bpg-actions {
+    flex-direction: column;
+  }
+  
+  .bpg-btn {
+    flex: none;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .bpg-warning-overlay {
+    background: #2d2d2d;
+    color: #e0e0e0;
+  }
+  
+  .bpg-warning-content.danger {
+    background: linear-gradient(135deg, #3d1a1a 0%, #2d2d2d 100%);
+  }
+  
+  .bpg-warning-header {
+    border-bottom-color: #404040;
+  }
+  
+  .bpg-warning-title {
+    color: #e0e0e0;
+  }
+  
+  .bpg-warning-score {
+    background: #404040;
+    color: #b0b0b0;
+  }
+  
+  .bpg-close-btn {
+    color: #b0b0b0;
+  }
+  
+  .bpg-close-btn:hover {
+    background-color: #404040;
+  }
+  
+  .bpg-concerns strong,
+  .bpg-indicators strong {
+    color: #e0e0e0;
+  }
+  
+  .bpg-concerns ul,
+  .bpg-indicator-reason {
+    color: #b0b0b0;
+  }
+  
+  .bpg-indicator {
+    background: #404040;
+  }
+  
+  .bpg-indicator-badge {
+    background: #2d2d2d;
+    color: #e0e0e0;
+  }
+  
+  .bpg-indicator-text {
+    color: #e0e0e0;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .bpg-warning-overlay {
+    border: 2px solid #000;
+  }
+  
+  .bpg-btn {
+    border: 1px solid #000;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .bpg-warning-overlay,
+  .bpg-indicator-badge {
+    animation: none;
+  }
+  
+  .bpg-btn,
+  .bpg-close-btn {
+    transition: none;
+  }
+}

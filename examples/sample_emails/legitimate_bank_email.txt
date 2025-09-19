@@ -1,0 +1,39 @@
+# Sample legitimate bank email
+
+From: noreply@chase.com
+To: customer@example.com
+Subject: Your Monthly Statement is Ready
+Message-ID: <statement-2025-09-19@chase.com>
+Date: Thu, 19 Sep 2025 07:15:47 +0000
+Received-SPF: pass (chase.com: domain of noreply@chase.com designates 192.0.2.1 as permitted sender)
+Authentication-Results: mx.example.com;
+    dkim=pass header.i=@chase.com;
+    dmarc=pass
+Content-Type: text/html; charset=utf-8
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chase Bank Statement</title>
+</head>
+<body>
+    <h2>Your Monthly Statement is Ready</h2>
+    <p>Dear Valued Customer,</p>
+    <p>Your monthly account statement for September 2025 is now available for viewing in your online banking account.</p>
+    <p>To view your statement:</p>
+    <ol>
+        <li>Log in to your <a href="https://www.chase.com/personal/online-banking">Chase Online Banking</a></li>
+        <li>Navigate to "Statements & Documents"</li>
+        <li>Select your account and statement period</li>
+    </ol>
+    <p>If you have any questions, please contact us at 1-800-935-9935.</p>
+    <p>Thank you for banking with Chase.</p>
+    <br>
+    <p>Sincerely,<br>Chase Customer Service</p>
+    <hr>
+    <small>
+        This is an automated message. Please do not reply to this email.<br>
+        Chase Bank, N.A. | Member FDIC
+    </small>
+</body>
+</html>
