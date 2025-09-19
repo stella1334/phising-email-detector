@@ -1,25 +1,43 @@
 // Background service worker for the Bank Phishing Guardian extension
 
-import { PhishingAPI } from './api.js';
-import { StorageManager } from './storage.js';
+console.log('🚀 Background script starting...');
 
-class BackgroundService {
-  constructor() {
-    this.api = new PhishingAPI();
-    this.storage = new StorageManager();
-    this.analysisCache = new Map();
-    this.setupEventListeners();
-  }
+let backgroundService = null;
+
+// Import modules with error handling
+(async () => {
+  try {
+    console.log('📦 Importing modules...');
+    const { PhishingAPI } = await import('./api.js');
+    const { StorageManager } = await import('./storage.js');
+    console.log('✅ Modules imported successfully');
+    
+    class BackgroundService {
+      constructor() {
+        console.log('🏗️ Initializing BackgroundService...');
+        this.api = new PhishingAPI();
+        this.storage = new StorageManager();
+        this.analysisCache = new Map();
+        this.setupEventListeners();
+        console.log('✅ BackgroundService initialized successfully');
+      }
 
   setupEventListeners() {
+    console.log('🎧 Setting up event listeners...');
+    
     // Handle installation
     chrome.runtime.onInstalled.addListener(this.handleInstall.bind(this));
+    console.log('✅ onInstalled listener added');
     
     // Handle messages from content scripts
     chrome.runtime.onMessage.addListener(this.handleMessage.bind(this));
+    console.log('✅ onMessage listener added');
     
     // Handle extension icon click
     chrome.action.onClicked.addListener(this.handleIconClick.bind(this));
+    console.log('✅ onClicked listener added');
+    
+    console.log('🎧 All event listeners setup complete');
   }
 
   async handleInstall(details) {
@@ -51,37 +69,112 @@ class BackgroundService {
     });
   }
 
-  async handleMessage(request, sender, sendResponse) {
-    try {
-      switch (request.action) {
-        case 'analyzeEmail':
-          const result = await this.analyzeEmail(request.emailData, sender.tab.id);
-          sendResponse({ success: true, data: result });
-          break;
-          
-        case 'getSettings':
-          const settings = await this.storage.getSettings();
-          sendResponse({ success: true, data: settings });
-          break;
-          
-        case 'updateSettings':
-          await this.storage.setSettings(request.settings);
-          sendResponse({ success: true });
-          break;
-          
-        case 'getCachedAnalysis':
-          const cached = this.getCachedAnalysis(request.emailHash);
-          sendResponse({ success: true, data: cached });
-          break;
-          
-        default:
-          sendResponse({ success: false, error: 'Unknown action' });
-      }
-    } catch (error) {
-      console.error('Background service error:', error);
-      sendResponse({ success: false, error: error.message });
-    }
+  handleMessage(request, sender, sendResponse) {
+    console.log('📨 Background: Received message:', request);
+    console.log('📨 Background: Sender:', sender);
+    console.log('📨 Background: Message action:', request?.action);
     
+    // Validate request structure
+    if (!request || !request.action) {
+      console.error('❌ Background: Invalid request format:', request);
+      sendResponse({ success: false, error: 'Invalid request format' });
+      return false;
+    }
+
+    console.log('🔄 Background: Processing message:', request.action);
+
+    // Handle async operations properly
+    (async () => {
+      try {
+        console.log('🔄 Background: Entering async handler for:', request.action);
+        
+        switch (request.action) {
+          case 'analyzeEmail':
+            console.log('📧 Background: Processing analyzeEmail request');
+            if (!request.emailData) {
+              console.error('❌ Background: No email data provided');
+              sendResponse({ success: false, error: 'Email data is required' });
+              return;
+            }
+            
+            console.log('📧 Background: Email data received:', {
+              sender: request.emailData.sender,
+              subject: request.emailData.subject?.substring(0, 50),
+              bodyLength: request.emailData.bodyText?.length
+            });
+            
+            const result = await this.analyzeEmail(request.emailData, sender.tab?.id);
+            console.log('📧 Background: Analysis result:', result);
+            
+            // Ensure result is properly structured
+            if (result && !result.error) {
+              console.log('✅ Background: Sending success response');
+              sendResponse({ success: true, data: result });
+            } else {
+              console.log('❌ Background: Sending error response:', result);
+              sendResponse({ 
+                success: false, 
+                error: result?.message || result?.error || 'Analysis failed' 
+              });
+            }
+            break;
+            
+          case 'getSettings':
+            const settings = await this.storage.getSettings();
+            sendResponse({ success: true, data: settings });
+            break;
+            
+          case 'updateSettings':
+            await this.storage.setSettings(request.settings);
+            sendResponse({ success: true });
+            break;
+            
+          case 'getCachedAnalysis':
+            const cached = this.getCachedAnalysis(request.emailHash);
+            sendResponse({ success: true, data: cached });
+            break;
+            
+          case 'healthCheck':
+            console.log('🏥 Background: Performing health check...');
+            console.log('🏥 API base URL:', this.api.baseURL);
+            try {
+              const healthResult = await this.api.healthCheck();
+              console.log('✅ Background: Health check successful:', healthResult);
+              sendResponse({ success: true, data: healthResult });
+            } catch (error) {
+              console.error('❌ Background: Health check failed:', error);
+              console.error('❌ Background: Error details:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+              });
+              sendResponse({ 
+                success: false, 
+                error: error.message || 'API server not responding' 
+              });
+            }
+            break;
+            
+          default:
+            console.log('❓ Background: Unknown action:', request.action);
+            sendResponse({ success: false, error: 'Unknown action: ' + request.action });
+        }
+      } catch (error) {
+        console.error('💥 Background service error:', error);
+        console.error('💥 Background error stack:', error.stack);
+        console.error('💥 Background error details:', {
+          name: error.name,
+          message: error.message,
+          action: request.action
+        });
+        sendResponse({ 
+          success: false, 
+          error: error.message || 'Unexpected error occurred' 
+        });
+      }
+    })();
+    
+    console.log('🔄 Background: Returning true to keep message channel open');
     return true; // Keep message channel open for async response
   }
 
@@ -232,8 +325,27 @@ class BackgroundService {
   }
 }
 
-// Initialize background service
-const backgroundService = new BackgroundService();
+    // Initialize background service
+    console.log('🚀 Creating BackgroundService instance...');
+    backgroundService = new BackgroundService();
+    console.log('✅ Background service initialized successfully');
+    
+  } catch (error) {
+    console.error('💥 Failed to initialize background service:', error);
+    console.error('💥 Error stack:', error.stack);
+    console.error('💥 This will prevent the extension from working properly');
+    
+    // Set up a minimal error handler so content scripts get some response
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      console.error('❌ Background service not available, request failed:', request);
+      sendResponse({ 
+        success: false, 
+        error: 'Background service failed to initialize: ' + error.message 
+      });
+      return true;
+    });
+  }
+})();
 
 // Export for testing
 if (typeof module !== 'undefined') {
