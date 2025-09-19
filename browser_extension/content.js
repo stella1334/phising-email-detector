@@ -162,13 +162,6 @@ class EmailExtractor {
         subject: emailData.subject?.substring(0, 50)
       });
       
-<<<<<<< HEAD
-      // Better error handling for undefined responses
-      if (!response) {
-        throw new Error('No response received from background script');
-      }
-      
-=======
       const response = await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error('Background script response timeout (10s)'));
@@ -201,7 +194,6 @@ class EmailExtractor {
         error: response.error
       });
       
->>>>>>> da8d9a8d2576a4b99ea8262079eff67765b40a07
       if (response.success === true && response.data) {
         this.displayAnalysisResult(response.data);
       } else if (response.success === false) {

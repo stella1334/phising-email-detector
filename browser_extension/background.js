@@ -69,79 +69,10 @@ let backgroundService = null;
     });
   }
 
-<<<<<<< HEAD
-  async handleMessage(request, sender, sendResponse) {
-    try {
-      // Validate request structure
-      if (!request || !request.action) {
-        sendResponse({ success: false, error: 'Invalid request format' });
-        return true;
-      }
-
-      switch (request.action) {
-        case 'analyzeEmail':
-          if (!request.emailData) {
-            sendResponse({ success: false, error: 'Email data is required' });
-            break;
-          }
-          
-          const result = await this.analyzeEmail(request.emailData, sender.tab?.id);
-          
-          // Ensure result is properly structured
-          if (result && !result.error) {
-            sendResponse({ success: true, data: result });
-          } else {
-            sendResponse({ 
-              success: false, 
-              error: result?.message || result?.error || 'Analysis failed' 
-            });
-          }
-          break;
-          
-        case 'getSettings':
-          const settings = await this.storage.getSettings();
-          sendResponse({ success: true, data: settings });
-          break;
-          
-        case 'updateSettings':
-          await this.storage.setSettings(request.settings);
-          sendResponse({ success: true });
-          break;
-          
-        case 'getCachedAnalysis':
-          const cached = this.getCachedAnalysis(request.emailHash);
-          sendResponse({ success: true, data: cached });
-          break;
-          
-        case 'healthCheck':
-          try {
-            const healthResult = await this.api.healthCheck();
-            sendResponse({ success: true, data: healthResult });
-          } catch (error) {
-            console.error('Health check failed:', error);
-            sendResponse({ 
-              success: false, 
-              error: error.message || 'API server not responding' 
-            });
-          }
-          break;
-          
-        default:
-          sendResponse({ success: false, error: 'Unknown action: ' + request.action });
-      }
-    } catch (error) {
-      console.error('Background service error:', error);
-      sendResponse({ 
-        success: false, 
-        error: error.message || 'Unexpected error occurred' 
-      });
-    }
-=======
   handleMessage(request, sender, sendResponse) {
     console.log('📨 Background: Received message:', request);
     console.log('📨 Background: Sender:', sender);
     console.log('📨 Background: Message action:', request?.action);
->>>>>>> da8d9a8d2576a4b99ea8262079eff67765b40a07
     
     // Validate request structure
     if (!request || !request.action) {
