@@ -156,16 +156,52 @@ class EmailExtractor {
       this.showAnalysisIndicator('analyzing');
       
       // Send to background script for analysis
-      const response = await chrome.runtime.sendMessage({
+      console.log('📤 Content: Sending message to background script:', {
         action: 'analyzeEmail',
-        emailData: emailData
+        sender: emailData.sender,
+        subject: emailData.subject?.substring(0, 50)
       });
       
+<<<<<<< HEAD
       // Better error handling for undefined responses
       if (!response) {
         throw new Error('No response received from background script');
       }
       
+=======
+      const response = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Background script response timeout (10s)'));
+        }, 10000);
+        
+        chrome.runtime.sendMessage({
+          action: 'analyzeEmail',
+          emailData: emailData
+        }, (response) => {
+          clearTimeout(timeout);
+          if (chrome.runtime.lastError) {
+            console.error('📥 Content: Chrome runtime error:', chrome.runtime.lastError);
+            reject(new Error('Chrome runtime error: ' + chrome.runtime.lastError.message));
+          } else {
+            console.log('📥 Content: Received response from background:', response);
+            resolve(response);
+          }
+        });
+      });
+      
+      // Better error handling for undefined responses
+      if (!response) {
+        console.error('📥 Content: No response received from background script');
+        throw new Error('No response received from background script');
+      }
+      
+      console.log('📥 Content: Response received:', {
+        success: response.success,
+        hasData: !!response.data,
+        error: response.error
+      });
+      
+>>>>>>> da8d9a8d2576a4b99ea8262079eff67765b40a07
       if (response.success === true && response.data) {
         this.displayAnalysisResult(response.data);
       } else if (response.success === false) {
