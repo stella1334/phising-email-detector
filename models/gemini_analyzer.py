@@ -54,8 +54,7 @@ class GeminiAnalyzer:
                 prompt,
                 generation_config=genai.types.GenerationConfig(
                     temperature=settings.gemini_temperature,
-                    max_output_tokens=settings.gemini_max_tokens,
-                    response_mime_type="application/json",
+                    max_output_tokens=settings.gemini_max_tokens
                 )
             )
             
@@ -93,17 +92,18 @@ class GeminiAnalyzer:
                 "confidence": indicator.confidence if hasattr(indicator, 'confidence') else 0.5
             })
         
-        prompt = f"""
+        # Build the prompt using string concatenation to avoid f-string formatting issues
+        prompt = """
 You are an expert cybersecurity analyst specializing in email phishing detection. Analyze the following email for phishing characteristics and provide a comprehensive assessment.
 
 **EMAIL INFORMATION:**
 ```json
-{json.dumps(email_info, indent=2)}
+""" + json.dumps(email_info, indent=2) + """
 ```
 
 **DETERMINISTIC ANALYSIS FINDINGS:**
 ```json
-{json.dumps(deterministic_summary, indent=2)}
+""" + json.dumps(deterministic_summary, indent=2) + """
 ```
 
 **ANALYSIS REQUIREMENTS:**

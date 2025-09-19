@@ -214,17 +214,20 @@ class PopupManager {
     const apiText = document.getElementById('apiText');
     
     try {
-      const response = await fetch(`${this.settings.apiEndpoint}/health`);
+      const response = await chrome.runtime.sendMessage({
+        action: 'healthCheck'
+      });
       
-      if (response.ok) {
+      if (response && response.success) {
         apiIndicator.textContent = '🟢';
         apiText.textContent = 'API Connected';
       } else {
-        throw new Error(`HTTP ${response.status}`);
+        throw new Error(response?.error || 'Health check failed');
       }
     } catch (error) {
+      console.error('API health check failed:', error);
       apiIndicator.textContent = '🔴';
-      apiText.textContent = 'API Disconnected';
+      apiText.textContent = 'API server not responding';
     }
   }
 
@@ -294,30 +297,63 @@ class PopupManager {
     }
     
     try {
+      const btn = document.getElementById('analyzeCurrentBtn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="btn-icon">⏳</span>Analyzing...';
+      btn.disabled = true;
+      
+      // First check if there's email content to analyze
+      const emailInfoResponse = await chrome.tabs.sendMessage(this.currentTab.id, {
+        action: 'getEmailInfo'
+      });
+      
+      if (!emailInfoResponse?.success || !emailInfoResponse.data?.hasEmail) {
+        throw new Error('No email content found. Please make sure you\'re viewing an email.');
+      }
+      
+      console.log('Email info:', emailInfoResponse.data);
+      
       // Send message to content script to analyze current email
       const response = await chrome.tabs.sendMessage(this.currentTab.id, {
-        action: 'analyzeEmail'
+        action: 'analyzeCurrentEmail'
       });
       
       if (response && response.success) {
-        this.displayCurrentAnalysis(response.analysis);
-        
         // Show success message
-        const btn = document.getElementById('analyzeCurrentBtn');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="btn-icon">✅</span>Analysis Complete';
-        btn.disabled = true;
+        btn.innerHTML = '<span class="btn-icon">✅</span>Analysis Started';
+        
+        // Refresh popup data after a delay to show results
+        setTimeout(() => {
+          this.loadStats();
+          this.updateActivity();
+        }, 2000);
         
         setTimeout(() => {
           btn.innerHTML = originalText;
           btn.disabled = false;
-        }, 2000);
+        }, 3000);
       } else {
         throw new Error(response?.error || 'Analysis failed');
       }
     } catch (error) {
       console.error('Email analysis failed:', error);
-      alert('Failed to analyze email. Please make sure you\'re viewing an email.');
+      
+      // Show specific error messages
+      let message = 'Analysis failed: ';
+      if (error.message.includes('No email content')) {
+        message += 'Please make sure you\'re viewing an email with content.';
+      } else if (error.message.includes('Could not establish connection')) {
+        message += 'Extension needs to be reloaded. Please refresh the page.';
+      } else {
+        message += error.message;
+      }
+      
+      alert(message);
+      
+      // Reset button
+      const btn = document.getElementById('analyzeCurrentBtn');
+      btn.innerHTML = '<span class="btn-icon">🔍</span>Analyze Current Email';
+      btn.disabled = false;
     }
   }
 

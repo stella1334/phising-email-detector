@@ -53,10 +53,30 @@ class BackgroundService {
 
   async handleMessage(request, sender, sendResponse) {
     try {
+      // Validate request structure
+      if (!request || !request.action) {
+        sendResponse({ success: false, error: 'Invalid request format' });
+        return true;
+      }
+
       switch (request.action) {
         case 'analyzeEmail':
-          const result = await this.analyzeEmail(request.emailData, sender.tab.id);
-          sendResponse({ success: true, data: result });
+          if (!request.emailData) {
+            sendResponse({ success: false, error: 'Email data is required' });
+            break;
+          }
+          
+          const result = await this.analyzeEmail(request.emailData, sender.tab?.id);
+          
+          // Ensure result is properly structured
+          if (result && !result.error) {
+            sendResponse({ success: true, data: result });
+          } else {
+            sendResponse({ 
+              success: false, 
+              error: result?.message || result?.error || 'Analysis failed' 
+            });
+          }
           break;
           
         case 'getSettings':
@@ -74,12 +94,28 @@ class BackgroundService {
           sendResponse({ success: true, data: cached });
           break;
           
+        case 'healthCheck':
+          try {
+            const healthResult = await this.api.healthCheck();
+            sendResponse({ success: true, data: healthResult });
+          } catch (error) {
+            console.error('Health check failed:', error);
+            sendResponse({ 
+              success: false, 
+              error: error.message || 'API server not responding' 
+            });
+          }
+          break;
+          
         default:
-          sendResponse({ success: false, error: 'Unknown action' });
+          sendResponse({ success: false, error: 'Unknown action: ' + request.action });
       }
     } catch (error) {
       console.error('Background service error:', error);
-      sendResponse({ success: false, error: error.message });
+      sendResponse({ 
+        success: false, 
+        error: error.message || 'Unexpected error occurred' 
+      });
     }
     
     return true; // Keep message channel open for async response

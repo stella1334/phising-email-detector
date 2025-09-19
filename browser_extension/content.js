@@ -144,7 +144,9 @@ class EmailExtractor {
       this.isAnalyzing = true;
       
       const emailData = this.extractEmailData();
-      if (!emailData || !emailData.body) {
+      if (!emailData || !emailData.bodyText || emailData.bodyText.length < 10) {
+        console.warn('No valid email content found for analysis');
+        this.showAnalysisIndicator('error', 'Failed to analyze email. Please make sure you\'re viewing an email.');
         return;
       }
       
@@ -159,15 +161,37 @@ class EmailExtractor {
         emailData: emailData
       });
       
-      if (response.success) {
+      // Better error handling for undefined responses
+      if (!response) {
+        throw new Error('No response received from background script');
+      }
+      
+      if (response.success === true && response.data) {
         this.displayAnalysisResult(response.data);
+      } else if (response.success === false) {
+        this.showAnalysisIndicator('error', response.error || 'Analysis failed');
       } else {
-        this.showAnalysisIndicator('error', response.error);
+        // Handle malformed response
+        console.error('Malformed response:', response);
+        this.showAnalysisIndicator('error', 'Received invalid response from server');
       }
       
     } catch (error) {
       console.error('Email analysis failed:', error);
-      this.showAnalysisIndicator('error', error.message);
+      
+      // More specific error messages
+      let errorMessage = 'Analysis failed';
+      if (error.message.includes('Extension context invalidated')) {
+        errorMessage = 'Extension needs to be reloaded';
+      } else if (error.message.includes('network')) {
+        errorMessage = 'Network connection failed';
+      } else if (error.message.includes('No response')) {
+        errorMessage = 'API server not responding';
+      } else {
+        errorMessage = error.message || 'Unknown error occurred';
+      }
+      
+      this.showAnalysisIndicator('error', errorMessage);
     } finally {
       this.isAnalyzing = false;
     }
@@ -184,30 +208,102 @@ class EmailExtractor {
         timestamp: new Date().toISOString()
       };
       
-      // Extract subject
-      const subjectElement = document.querySelector(selectors.emailSubject);
-      emailData.subject = subjectElement?.textContent?.trim() || '';
+      console.log('Extracting email data for:', this.provider);
       
-      // Extract sender
-      const senderElement = document.querySelector(selectors.emailSender);
-      emailData.sender = this.extractEmailAddress(senderElement);
+      // Extract subject with multiple fallbacks
+      const subjectSelectors = selectors.emailSubject.split(', ');
+      for (const selector of subjectSelectors) {
+        const element = document.querySelector(selector.trim());
+        if (element && element.textContent?.trim()) {
+          emailData.subject = element.textContent.trim();
+          console.log('Found subject:', emailData.subject);
+          break;
+        }
+      }
       
-      // Extract date
-      const dateElement = document.querySelector(selectors.emailDate);
-      emailData.date = dateElement?.getAttribute('title') || dateElement?.textContent?.trim();
+      // Extract sender with multiple fallbacks
+      const senderSelectors = selectors.emailSender.split(', ');
+      for (const selector of senderSelectors) {
+        const element = document.querySelector(selector.trim());
+        if (element) {
+          const extractedSender = this.extractEmailAddress(element);
+          if (extractedSender) {
+            emailData.sender = extractedSender;
+            console.log('Found sender:', emailData.sender);
+            break;
+          }
+        }
+      }
       
-      // Extract body
-      const bodyElement = document.querySelector(selectors.emailBody);
-      if (bodyElement) {
-        emailData.body = bodyElement.innerHTML || bodyElement.textContent;
-        emailData.bodyText = bodyElement.textContent?.trim();
+      // Extract date with multiple fallbacks
+      const dateSelectors = selectors.emailDate.split(', ');
+      for (const selector of dateSelectors) {
+        const element = document.querySelector(selector.trim());
+        if (element) {
+          emailData.date = element.getAttribute('title') || element.textContent?.trim();
+          if (emailData.date) {
+            console.log('Found date:', emailData.date);
+            break;
+          }
+        }
+      }
+      
+      // Extract body with multiple fallbacks
+      const bodySelectors = selectors.emailBody.split(', ');
+      for (const selector of bodySelectors) {
+        const element = document.querySelector(selector.trim());
+        if (element && element.textContent?.trim()) {
+          emailData.body = element.innerHTML || element.textContent;
+          emailData.bodyText = element.textContent?.trim();
+          console.log('Found body text length:', emailData.bodyText?.length || 0);
+          break;
+        }
+      }
+      
+      // Fallback: try to find any email content on the page
+      if (!emailData.bodyText || emailData.bodyText.length < 10) {
+        // Try broader selectors for Gmail
+        const fallbackSelectors = [
+          '.nH .if .h7', // Gmail message body
+          '.ii.gt', // Gmail message container
+          '[role="main"] div[dir="ltr"]', // Gmail main content
+          '[role="listitem"] div[dir="ltr"]', // Gmail message in list
+          '.adn.ads div', // Gmail conversation
+        ];
+        
+        for (const selector of fallbackSelectors) {
+          const elements = document.querySelectorAll(selector);
+          for (const element of elements) {
+            const text = element.textContent?.trim();
+            if (text && text.length > 20) {
+              emailData.body = element.innerHTML || element.textContent;
+              emailData.bodyText = text;
+              console.log('Found body text via fallback:', text.substring(0, 100));
+              break;
+            }
+          }
+          if (emailData.bodyText && emailData.bodyText.length > 20) break;
+        }
       }
       
       // Extract links
-      emailData.links = this.extractLinks(bodyElement);
+      emailData.links = this.extractLinks(document);
       
       // Extract recipient (current user)
       emailData.recipient = this.extractRecipient();
+      
+      // Validate we have minimum required data
+      if (!emailData.bodyText || emailData.bodyText.length < 10) {
+        console.warn('Insufficient email content found');
+        return null;
+      }
+      
+      console.log('Successfully extracted email data:', {
+        subject: emailData.subject?.substring(0, 50) || 'No subject',
+        sender: emailData.sender || 'No sender',
+        bodyLength: emailData.bodyText?.length || 0,
+        linksCount: emailData.links?.length || 0
+      });
       
       return emailData;
       
@@ -220,22 +316,26 @@ class EmailExtractor {
   getSelectors() {
     const selectors = {
       gmail: {
-        emailSubject: 'h2[data-thread-perm-id], .hP',
-        emailSender: '[email], .go span[email]',
-        emailBody: '[dir="ltr"], .ii.gt div',
-        emailDate: '.g3 span[title]'
+        // Updated selectors for current Gmail interface (2025)
+        emailSubject: 'h2[data-thread-perm-id], .hP, [data-testid="thread-subject"], [role="heading"]',
+        emailSender: '[email], .go span[email], [data-testid="sender-info"] span, .gb_Va .gb_lb, [data-hovercard-id*="@"], .gs .gD, span[email], .qu .go .gD',
+        emailBody: '.ii.gt div, [data-testid="message-body"], .a3s.aiL, [dir="ltr"][class*="ii"], .AO .y6 .a3s, .nH .if .h7',
+        emailDate: '.g3 span[title], [data-testid="message-date"], .g3 .gH .gK, span[title*=":"], .nH .g3 span',
+        emailContainer: '[role="main"], .nH .if, .Bs .nH'
       },
       outlook: {
-        emailSubject: '[data-testid="message-subject"], [aria-label*="Subject"]',
-        emailSender: '[data-testid="message-header-from"] button',
-        emailBody: '[data-testid="message-body"], .elementToProof',
-        emailDate: '[data-testid="message-header-date"]'
+        emailSubject: '[data-testid="message-subject"], [aria-label*="Subject"], [role="heading"]',
+        emailSender: '[data-testid="message-header-from"] button, [data-testid="sender-info"]',
+        emailBody: '[data-testid="message-body"], .elementToProof, [role="document"]',
+        emailDate: '[data-testid="message-header-date"]',
+        emailContainer: '[role="region"][aria-label*="message"]'
       },
       yahoo: {
         emailSubject: '[data-test-id="message-subject"]',
-        emailSender: '[data-test-id="message-from"]',
+        emailSender: '[data-test-id="message-from"]', 
         emailBody: '[data-test-id="message-body"]',
-        emailDate: '[data-test-id="message-date"]'
+        emailDate: '[data-test-id="message-date"]',
+        emailContainer: '[data-test-id="message-view-container"]'
       }
     };
     
@@ -248,14 +348,50 @@ class EmailExtractor {
     // Try to get email from various attributes
     const emailAttr = element.getAttribute('email') || 
                      element.getAttribute('data-email') ||
+                     element.getAttribute('data-hovercard-id') ||
                      element.getAttribute('title');
     
-    if (emailAttr) return emailAttr;
+    if (emailAttr && emailAttr.includes('@')) return emailAttr;
+    
+    // Look for email in child elements
+    const emailChild = element.querySelector('[email], [data-hovercard-id*="@"], span[email]');
+    if (emailChild) {
+      const childEmail = emailChild.getAttribute('email') || 
+                        emailChild.getAttribute('data-hovercard-id') ||
+                        emailChild.textContent;
+      if (childEmail && childEmail.includes('@')) return childEmail;
+    }
     
     // Extract from text content
     const text = element.textContent || '';
     const emailMatch = text.match(/[\w\.-]+@[\w\.-]+\.[\w]+/);
-    return emailMatch ? emailMatch[0] : text.trim();
+    if (emailMatch) return emailMatch[0];
+    
+    // If no email found, try to find it in nearby elements for Gmail
+    if (this.provider === 'gmail') {
+      // Look for sender info in Gmail's structure
+      const gmailSenderSelectors = [
+        '.go .gD[email]',
+        '.gD[email]',
+        '[data-hovercard-id*="@"]',
+        '.qu .go .gD',
+        '.go span[email]'
+      ];
+      
+      for (const selector of gmailSenderSelectors) {
+        const senderEl = document.querySelector(selector);
+        if (senderEl) {
+          const email = senderEl.getAttribute('email') || 
+                       senderEl.getAttribute('data-hovercard-id') ||
+                       senderEl.textContent;
+          if (email && email.includes('@')) {
+            return email;
+          }
+        }
+      }
+    }
+    
+    return text.trim();
   }
 
   extractLinks(bodyElement) {
@@ -440,11 +576,41 @@ class EmailExtractor {
       }
     });
     
+    // Listen for manual analysis requests from popup
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (request.action === 'analyzeCurrentEmail') {
+        this.analyzeCurrentEmail()
+          .then(() => {
+            sendResponse({ success: true, message: 'Analysis started' });
+          })
+          .catch(error => {
+            sendResponse({ success: false, error: error.message });
+          });
+        return true; // Indicates async response
+      }
+      
+      if (request.action === 'getEmailInfo') {
+        const emailData = this.extractEmailData();
+        sendResponse({ 
+          success: true, 
+          data: {
+            hasEmail: !!emailData && !!emailData.bodyText,
+            subject: emailData?.subject?.substring(0, 50) || 'No subject',
+            sender: emailData?.sender || 'No sender',
+            bodyLength: emailData?.bodyText?.length || 0
+          }
+        });
+        return false; // Sync response
+      }
+    });
+    
     // Expose extension API for overlay buttons
     window.bpgExtension = {
       reportPhishing: () => this.reportPhishing(),
       markSafe: () => this.markSafe(),
-      showDetails: () => this.showDetails()
+      showDetails: () => this.showDetails(),
+      analyzeCurrentEmail: () => this.analyzeCurrentEmail(),
+      extractEmailData: () => this.extractEmailData()
     };
   }
 

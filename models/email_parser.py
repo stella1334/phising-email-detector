@@ -42,13 +42,10 @@ class EmailParser:
                 authentication_results=msg.get('Authentication-Results', '')
             )
             
-            # Parse date
+            # Parse date with multiple format support
             date_str = msg.get('Date', '')
             if date_str:
-                try:
-                    metadata.received_date = email.utils.parsedate_to_datetime(date_str)
-                except Exception as e:
-                    logger.warning(f"Could not parse date '{date_str}': {e}")
+                metadata.received_date = self._parse_email_date(date_str)
             
             # Extract body content
             html_body, text_body = self._extract_body_content(msg)
@@ -271,3 +268,47 @@ class EmailParser:
             return text_body
         else:
             return ""
+    
+    def _parse_email_date(self, date_str: str) -> Optional[datetime]:
+        """Parse email date with support for multiple formats"""
+        import dateutil.parser
+        
+        try:
+            # First try standard email date parsing
+            return email.utils.parsedate_to_datetime(date_str)
+        except Exception:
+            try:
+                # Try dateutil parser for more flexible parsing
+                return dateutil.parser.parse(date_str)
+            except Exception:
+                try:
+                    # Handle specific format like "8 Sept 2025, 19:20"
+                    import re
+                    from datetime import datetime
+                    
+                    # Clean up the date string
+                    cleaned_date = re.sub(r',\s*', ' ', date_str)  # Remove commas
+                    
+                    # Try common patterns
+                    patterns = [
+                        '%d %b %Y %H:%M',
+                        '%d %B %Y %H:%M',
+                        '%b %d %Y %H:%M',
+                        '%B %d %Y %H:%M',
+                        '%Y-%m-%d %H:%M',
+                        '%d/%m/%Y %H:%M',
+                        '%m/%d/%Y %H:%M'
+                    ]
+                    
+                    for pattern in patterns:
+                        try:
+                            return datetime.strptime(cleaned_date, pattern)
+                        except ValueError:
+                            continue
+                    
+                    logger.warning(f"Could not parse date '{date_str}' with any known format")
+                    return None
+                    
+                except Exception as e:
+                    logger.warning(f"Could not parse date '{date_str}': {e}")
+                    return None
